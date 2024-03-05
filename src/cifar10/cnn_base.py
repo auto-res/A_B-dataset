@@ -1,10 +1,8 @@
 import numpy as np
 import torch
-
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-
 
 class Net(nn.Module):
     def __init__(self):
@@ -25,49 +23,48 @@ class Net(nn.Module):
         x = self.fc3(x)
         return x
 
-def train(trainloader, params):
+def train(trainloader, params, device):
     net = Net()
+    net.to(device)  # Move the model to the specified device
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=params['lr'])
 
-    for epoch in range(1):  # データセットを複数回繰り返して学習
+    for epoch in range(1):  # loop over the dataset multiple times
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
-            # 入力データを取得
-            inputs, labels = data
+            inputs, labels = data[0].to(device), data[1].to(device)  # Move inputs and labels to the specified device
 
-            # 勾配をゼロにする
-            optimizer.zero_grad()
+            optimizer.zero_grad()  # zero the parameter gradients
 
-            # 順伝播 + 逆伝播 + 最適化
-            outputs = net(inputs)
+            outputs = net(inputs)  # forward + backward + optimize
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
 
-            # 統計を表示
             running_loss += loss.item()
-            if i % 2000 == 1999:    # 2000ミニバッチごとに表示
-                #print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.3f}')
+            if i % 2000 == 1999:  # print every 2000 mini-batches
                 running_loss = 0.0
+
     return net
 
-def test(net, testloader):
+def test(net, testloader, device):
     all_outputs = []
 
     with torch.no_grad():
         for data in testloader:
-            images, labels = data
+            images, labels = data[0].to(device), data[1].to(device)  # Move images to the specified device
             outputs = net(images)
             probabilities = F.softmax(outputs, dim=1)
-            probabilities_np = probabilities.numpy().tolist()
+            probabilities_np = probabilities.cpu().numpy().tolist()  # Move the probabilities back to CPU for numpy conversion
             all_outputs.extend(probabilities_np)
 
     all_outputs_np = np.array(all_outputs)
     return all_outputs_np
 
 def model(trainloader, testloader, params):
-    net = train(trainloader, params)
-    y_pred = test(net, testloader)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    net = train(trainloader, params, device)
+    y_pred = test(net, testloader, device)
     return y_pred
+
