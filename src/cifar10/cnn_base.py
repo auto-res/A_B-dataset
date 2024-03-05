@@ -63,7 +63,7 @@ def test(net, testloader, device):
     return all_outputs_np
 
 def model(trainloader, testloader, params):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda")# if torch.cuda.is_available() else "cpu")
     net = train(trainloader, params, device)
     y_pred = test(net, testloader, device)
     return y_pred
