@@ -64,6 +64,8 @@ def test(net, testloader, device):
 
 def model(trainloader, testloader, params):
     device = torch.device("cuda")# if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        print("CUDA (GPU support) is available in this environment.")
     net = train(trainloader, params, device)
     y_pred = test(net, testloader, device)
     return y_pred
